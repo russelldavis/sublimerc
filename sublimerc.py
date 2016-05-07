@@ -164,67 +164,6 @@ class AutoArrangeTabsThread(threading.Thread):
             AutoArrangeTabs.running = False
 
 
-class RecentFilesEventListener(sublime_plugin.EventListener):
-    def update_file_list(self, view, list_name):
-        file_name = view.file_name()
-        if file_name:
-            settings = view.window().settings()
-            files = settings.get(list_name, [])
-
-            try:
-                files.remove(file_name)
-            except ValueError:
-                pass
-
-            files.insert(0, file_name)
-            # Prevent the list from growing unbounded.
-            # TODO: make this a setting.
-            del files[50:]
-            settings.set(list_name, files)
-
-    def on_modified_async(self, view):
-        self.update_file_list(view, 'recently_edited_files')
-
-    def on_activated_async(self, view):
-        self.update_file_list(view, 'recently_activated_files')
-
-
-class ShowFileListCommand(sublime_plugin.WindowCommand):
-    def friendly_path(self, path):
-        for folder in self.window.folders():
-            path = path.replace(folder + '/', '', 1)
-
-        home_dir = os.path.expanduser('~')
-        return path.replace(home_dir, '~')
-
-    def run(self, list):
-        settings = self.window.settings()
-        files = settings.get(list, [])
-        orig_active_view = self.window.active_view()
-
-        # No point in showing the current file.
-        try:
-            # The object we get back from settings.get() is a copy, so this is
-            # safe to mutate.
-            files.remove(orig_active_view.file_name())
-        except ValueError:
-            pass
-
-        items = [[os.path.basename(f), self.friendly_path(f)] for f in files]
-
-        def on_done(index):
-            if index >= 0:
-                self.window.open_file(files[index])
-            else:
-                self.window.focus_view(orig_active_view)
-
-        def on_highlight(index):
-            self.window.open_file(files[index], sublime.TRANSIENT)
-
-        flags = sublime.KEEP_OPEN_ON_FOCUS_LOST
-        self.window.show_quick_panel(items, on_done, flags, 0, on_highlight)
-
-
 # def hide_sublime():
 #     cmd = """
 #         tell application "Finder"
