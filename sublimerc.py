@@ -153,12 +153,12 @@ class AutoArrangeTabsThread(threading.Thread):
             AutoArrangeTabs.running = False
 
 
-class RecentlyEditedFilesEventListener(sublime_plugin.EventListener):
-    def on_modified_async(self, view):
+class RecentFilesEventListener(sublime_plugin.EventListener):
+    def update_file_list(self, view, list_name):
         file_name = view.file_name()
         if file_name:
             settings = view.window().settings()
-            files = settings.get("recently_edited_files", [])
+            files = settings.get(list_name, [])
 
             try:
                 files.remove(file_name)
@@ -169,10 +169,16 @@ class RecentlyEditedFilesEventListener(sublime_plugin.EventListener):
             # Prevent the list from growing unbounded.
             # TODO: make this a setting.
             del files[50:]
-            settings.set("recently_edited_files", files)
+            settings.set(list_name, files)
+
+    def on_modified_async(self, view):
+        self.update_file_list(view, 'recently_edited_files')
+
+    def on_activated_async(self, view):
+        self.update_file_list(view, 'recently_activated_files')
 
 
-class RecentlyEditedFilesCommand(sublime_plugin.WindowCommand):
+class ShowFileListCommand(sublime_plugin.WindowCommand):
     def friendly_path(self, path):
         for folder in self.window.folders():
             path = path.replace(folder + '/', '', 1)
@@ -180,9 +186,9 @@ class RecentlyEditedFilesCommand(sublime_plugin.WindowCommand):
         home_dir = os.path.expanduser('~')
         return path.replace(home_dir, '~')
 
-    def run(self):
+    def run(self, list):
         settings = self.window.settings()
-        files = settings.get("recently_edited_files", [])
+        files = settings.get(list, [])
         orig_active_view = self.window.active_view()
 
         # No point in showing the current file.
