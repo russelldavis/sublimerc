@@ -109,12 +109,24 @@ class AutoArrangeTabs(sublime_plugin.EventListener):
     @classmethod
     def log(cls, msg):
         if cls.logging:
-            print(msg)
+            print("AutoArrangeTabs: " + msg)
 
     def on_activated_async(self, view):
         if AutoArrangeTabs.running:
             AutoArrangeTabs.log("early return")
             return
+
+        # This is important because some quick-panels change the view to
+        # preview the selected file, and we don't want to rearrange tabs when
+        # that happens. Sublime doesn't send an on_activated event for those
+        # view changes while the panel is open, but it does send one for the
+        # panel itself on its initial activation (which is what we catch
+        # here), which we need to ignore so that the panel's view change for
+        # the initial selection doesn't get processed by our thread.
+        if view != view.window().active_view():
+            AutoArrangeTabs.log("ignoring panel activation")
+            return
+
         AutoArrangeTabs.running = True
         AutoArrangeTabsThread().start()
 
