@@ -153,11 +153,66 @@ class AutoArrangeTabsThread(threading.Thread):
             AutoArrangeTabs.running = False
 
 
-def hide_sublime():
-    cmd = """
-        tell application "Finder"
-            set frontProcess to first process whose frontmost is true
-            set visible of frontProcess to false
-        end tell"""
-    Popen(['/usr/bin/osascript', "-e", cmd], stdout=PIPE, stderr=PIPE)
+class RecentlyEditedFilesEventListener(sublime_plugin.EventListener):
+    def on_modified_async(self, view):
+        file_name = view.file_name()
+        if file_name:
+            settings = view.window().settings()
+            files = settings.get("recently_edited_files", [])
+
+            try:
+                files.remove(file_name)
+            except ValueError:
+                pass
+
+            files.insert(0, file_name)
+            # Prevent the list from growing unbounded.
+            # TODO: make this a setting.
+            del files[50:]
+            settings.set("recently_edited_files", files)
+
+
+class RecentlyEditedFilesCommand(sublime_plugin.WindowCommand):
+    def friendly_path(self, path):
+        for folder in self.window.folders():
+            path = path.replace(folder + '/', '', 1)
+
+        home_dir = os.path.expanduser('~')
+        return path.replace(home_dir, '~')
+
+    def run(self):
+        settings = self.window.settings()
+        files = settings.get("recently_edited_files", [])
+        orig_active_view = self.window.active_view()
+
+        # No point in showing the current file.
+        try:
+            # The object we get back from settings.get() is a copy, so this is
+            # safe to mutate.
+            files.remove(orig_active_view.file_name())
+        except ValueError:
+            pass
+
+        items = [[os.path.basename(f), self.friendly_path(f)] for f in files]
+
+        def on_done(index):
+            if index >= 0:
+                self.window.open_file(files[index])
+            else:
+                self.window.focus_view(orig_active_view)
+
+        def on_highlight(index):
+            self.window.open_file(files[index], sublime.TRANSIENT)
+
+        flags = sublime.KEEP_OPEN_ON_FOCUS_LOST
+        self.window.show_quick_panel(items, on_done, flags, 0, on_highlight)
+
+
+# def hide_sublime():
+#     cmd = """
+#         tell application "Finder"
+#             set frontProcess to first process whose frontmost is true
+#             set visible of frontProcess to false
+#         end tell"""
+#     Popen(['/usr/bin/osascript', "-e", cmd], stdout=PIPE, stderr=PIPE)
 
