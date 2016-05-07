@@ -116,6 +116,17 @@ class AutoArrangeTabs(sublime_plugin.EventListener):
             AutoArrangeTabs.log("early return")
             return
 
+        # This can happen after opening (previewing) a file in transient mode
+        # that no longer exists and then switching back to the previous view
+        # (e.g., when using the better-recent-files plugin). It can also
+        # happen in that same scenario if the file exists but there's some
+        # other error when opening it (e.g., "fatal: This operation must be
+        # run in a work tree" when opening .git/COMMIT_EDITMSG, perhaps an
+        # error from a plugin?)
+        if not view.window():
+            AutoArrangeTabs.log("ignoring view with no window")
+            return
+
         # This is important because some quick-panels change the view to
         # preview the selected file, and we don't want to rearrange tabs when
         # that happens. Sublime doesn't send an on_activated event for those
