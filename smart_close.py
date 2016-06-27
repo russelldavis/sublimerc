@@ -12,7 +12,7 @@ already closed.
 If the smart_close_ignore_folders setting is True, acts like there are no
 folders for the conditions above.
 
-If the last window is being closed, it quits the entire application.
+If the last window is being closed, it hides the application instead.
 """
 class SmartCloseCommand(sublime_plugin.WindowCommand):
     def run(self):
@@ -27,28 +27,26 @@ class SmartCloseCommand(sublime_plugin.WindowCommand):
         if not self.window.views() and has_folders:
             return
 
+        window_count = len(sublime.windows())
         self.window.run_command("close")
 
         if not self.window.views():
-            window_count = len(sublime.windows())
+            if window_count > 1:
+                # This does the equivalent of the close_windows_when_empty
+                # setting, except it doesn't apply to the last window or to
+                # windows that have folders.
+                if not has_folders:
+                    self.window.run_command("close")
+            else:
+                self.hide_sublime()
+                # sublime.run_command('exit')
 
-            # This does the equivalent of the close_windows_when_empty setting,
-            # except it won't apply to windows that have folders
-            if not has_folders:
-                self.window.run_command("close")
-                # We have deal with the window count this way because sublime.windows() won't immediately
-                # reflect the closed window from the command above.
-                window_count -= 1
-
-            if window_count < 1:
-                sublime.run_command('exit')
-
-    # @staticmethod
-    # def hide_sublime():
-    #     from subprocess import Popen, PIPE
-    #     cmd = """
-    #         tell application "Finder"
-    #             set frontProcess to first process whose frontmost is true
-    #             set visible of frontProcess to false
-    #         end tell"""
-    #     Popen(['/usr/bin/osascript', "-e", cmd], stdout=PIPE, stderr=PIPE)
+    @staticmethod
+    def hide_sublime():
+        from subprocess import Popen, PIPE
+        cmd = """
+            tell application "Finder"
+                set frontProcess to first process whose frontmost is true
+                set visible of frontProcess to false
+            end tell"""
+        Popen(['/usr/bin/osascript', "-e", cmd], stdout=PIPE, stderr=PIPE)
