@@ -4,15 +4,14 @@ import sublime_plugin
 """ Custom behavior when closing the last tab / last window
 
 If a window doesn't have folders, it auto closes the window when the last tab
-is closed.
+is closed. If the last window is being closed, it hides the application
+instead.
 
-If a window does have folders, it does not close window when all tabs are
+If a window does have folders, it does not close the window when all tabs are
 already closed.
 
 If the smart_close_ignore_folders setting is True, acts like there are no
 folders for the conditions above.
-
-If the last window is being closed, it hides the application instead.
 """
 class SmartCloseCommand(sublime_plugin.WindowCommand):
     def run(self):
@@ -30,13 +29,12 @@ class SmartCloseCommand(sublime_plugin.WindowCommand):
         window_count = len(sublime.windows())
         self.window.run_command("close")
 
-        if not self.window.views():
+        if not has_folders and not self.window.views():
             if window_count > 1:
                 # This does the equivalent of the close_windows_when_empty
                 # setting, except it doesn't apply to the last window or to
                 # windows that have folders.
-                if not has_folders:
-                    self.window.run_command("close")
+                self.window.run_command("close")
             else:
                 self.hide_sublime()
                 # sublime.run_command('exit')
