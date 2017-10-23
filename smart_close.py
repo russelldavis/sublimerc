@@ -42,9 +42,11 @@ class SmartCloseCommand(sublime_plugin.WindowCommand):
     @staticmethod
     def hide_sublime():
         from subprocess import Popen, PIPE
+        # TODO: get the process name from applescript before running the close command,
+        # or find some other way to not hardcode my custom "Sublime Edit" name here.
+        # Can't just grab the frontmost process since it won't always be sublime.
         cmd = """
             tell application "Finder"
-                set frontProcess to first process whose frontmost is true
-                set visible of frontProcess to false
+                set visible of process "Sublime Edit" to false
             end tell"""
         Popen(['/usr/bin/osascript', "-e", cmd], stdout=PIPE, stderr=PIPE)
