@@ -52,7 +52,7 @@ class AutoArrangeTabsThread(threading.Thread):
     def run(self):
         try:
             AutoArrangeTabs.log("waiting")
-            subprocess.call(['/Users/russell/src/keywait/keywait'])
+            subprocess.call(['/Users/russell/dev/projects/keywait/keywait'])
             AutoArrangeTabs.log("checking")
 
             window = sublime.active_window()
