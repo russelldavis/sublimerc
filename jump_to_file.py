@@ -14,9 +14,6 @@ class JumpToFile(sublime_plugin.TextCommand):
             self.view.window().open_file(try_file)
             return True
         else:
-            msg = "Not a file: %s" % try_file
-            print(msg)
-            sublime.status_message(msg)
             return False
 
 
@@ -40,4 +37,9 @@ class JumpToFile(sublime_plugin.TextCommand):
                 view_file = view.file_name()
                 if view_file:
                     view_dir = os.path.dirname(view_file)
-                    self._try_open(try_file, view_dir)
+                    if self._try_open(try_file, view_dir):
+                        continue
+
+                msg = "Not a file: %s" % try_file
+                print(msg)
+                sublime.status_message(msg)

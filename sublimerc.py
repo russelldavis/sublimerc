@@ -27,28 +27,21 @@ class SmartEnterCommand(sublime_plugin.TextCommand):
 
         self.view.run_command("insert", { "characters": to_insert })
 
-# This is a replacement for the builtin copy and cut commands, which have annoying behavior
-# when you invoke them with no selection: when you later go to paste that line, it will put
-# it above whatever line you're on, *even if your cursor is not at the start of the line*.
+# This is a replacement for the builtin paste command, which has annoying behavior after a
+# copy/paste with no selection: it will put the line above whatever line you're on, *even if*
+# your cursor is not at the start of the line*.
+#
 # They do this by adding special metadata to the item in the clipboard that only they interpret,
 # which means the special behavior only works in the same app, and you'd have no way of knowing
 # what was different by looking at the plain text contents of the clipboard. That was a fun one
-# to track down. See https://github.com/Microsoft/vscode/issues/16341
-def smart_clipboard(view, clipboard_command):
-    sel = view.sel()
-    if len(sel) == 1 and sel[0].empty():
-        orig = sel[0]
-        view.run_command("expand_selection", {"to": "line"})
-        view.run_command(clipboard_command)
-        sel.clear()
-        sel.add(orig)
-    else:
-        view.run_command(clipboard_command)
+# to track down. See https://github.com/Microsoft/vscode/issues/16341 (vs code does it too).
+#
+# NB: I previously tried to fix this by tweaking the copy and paste commands, but that resulted
+# in Cmd+C not working in the console panel. This way is simpler as well.
 
-class SmartCopy(sublime_plugin.TextCommand):
+# Should maybe be called DumbPaste since it fixes logic that's trying to be *too* smart.
+class SmartPaste(sublime_plugin.TextCommand):
     def run(self, edit):
-        smart_clipboard(self.view, "copy")
-
-class SmartCut(sublime_plugin.TextCommand):
-    def run(self, edit):
-        smart_clipboard(self.view, "cut")
+        # Looks like a no-op, but it removes the metadata
+        sublime.set_clipboard(sublime.get_clipboard())
+        self.view.run_command("paste")
