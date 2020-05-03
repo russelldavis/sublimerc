@@ -45,3 +45,6 @@ class SmartPaste(sublime_plugin.TextCommand):
         # Looks like a no-op, but it removes the metadata
         sublime.set_clipboard(sublime.get_clipboard())
         self.view.run_command("paste")
+
+# TODO: smart indentation based on whether the string already has leading whitespace:
+# if so, reindent it at the current level. Not sure if that is actually what you want though.

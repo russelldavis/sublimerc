@@ -14,6 +14,8 @@ class AutoArrangeTabs(sublime_plugin.EventListener):
             print("AutoArrangeTabs: " + msg)
 
     def on_activated_async(self, view):
+        AutoArrangeTabs.log("activated")
+
         if AutoArrangeTabs.running:
             AutoArrangeTabs.log("early return")
             return
