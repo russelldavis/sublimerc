@@ -32,7 +32,6 @@ class DetectDeletedFiles(sublime_plugin.EventListener):
             # because in-app activations are immediately preceded by in-app
             # deactivations.
             if elapsed > 0.5:
-                print("detecting")
                 self.handle_deleted_files()
 
     @classmethod

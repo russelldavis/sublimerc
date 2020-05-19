@@ -6,23 +6,29 @@ import threading
 from .lib.settled_event import _event
 
 
-class SettledEventListener(sublime_plugin.EventListener):
-    running = False
-    logging = False
+LOGGING = False
 
-    @classmethod
-    def log(cls, msg):
-        if cls.logging:
-            print("SettledEvent: " + msg)
+
+def log(msg):
+    if LOGGING:
+        print("SettledEvent: " + msg)
+
+
+class SettledEventListener(sublime_plugin.EventListener):
+    thread_running = False
+
+    def on_load_async(self, view):
+        log("load")
+
 
     def on_activated_async(self, view):
-        SettledEventListener.log("activated")
+        log("activated")
 
-        if SettledEventListener.running:
-            SettledEventListener.log("early return")
+        if SettledEventListener.thread_running:
+            log("early return")
             return
 
-        # This can happen after opening (previewing) a file in transient mode
+        # This can happen after previewing (opening in transient mode) a file
         # that no longer exists and then switching back to the previous view
         # (e.g., when using the better-recent-files plugin). It can also
         # happen in that same scenario if the file exists but there's some
@@ -30,7 +36,7 @@ class SettledEventListener(sublime_plugin.EventListener):
         # run in a work tree" when opening .git/COMMIT_EDITMSG, perhaps an
         # error from a plugin?)
         if not view.window():
-            SettledEventListener.log("ignoring view with no window")
+            log("ignoring view with no window")
             return
 
         # This is important because some quick-panels change the view to
@@ -41,10 +47,10 @@ class SettledEventListener(sublime_plugin.EventListener):
         # here), which we need to ignore so that the panel's view change for
         # the initial selection doesn't get processed by our thread.
         if view != view.window().active_view():
-            SettledEventListener.log("ignoring panel activation")
+            log("ignoring panel activation")
             return
 
-        SettledEventListener.running = True
+        SettledEventListener.thread_running = True
         SettledEventThread().start()
 
 
@@ -55,12 +61,17 @@ class SettledEventListener(sublime_plugin.EventListener):
 class SettledEventThread(threading.Thread):
     def run(self):
         try:
-            SettledEventListener.log("waiting")
+            log("waiting")
             subprocess.call(['/Users/russell/dev/projects/keywait/keywait'])
 
-            SettledEventListener.log("emitting settled_event")
-            window = sublime.active_window()
-            _event.emit(window.active_view())
+            view = sublime.active_window().active_view()
+            # NB: file_name might be None
+            log("scheduling settled_event for " + str(view.file_name()))
+            # Emit on sublime's async thread to avoid potential threading issues for callers
+            def emit():
+                log("emitting settled_event for " + str(view.file_name()))
+                _event.emit(view)
+            sublime.set_timeout_async(emit, 0)
         finally:
-            SettledEventListener.running = False
+            SettledEventListener.thread_running = False
 

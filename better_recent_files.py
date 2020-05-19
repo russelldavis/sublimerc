@@ -40,7 +40,7 @@ def update_file_list(view, list_name):
 
 
 @settled_event.add_listener
-def on_settled(view):
+def on_settled_async(view):
     update_file_list(view, 'recently_activated_files')
 
 

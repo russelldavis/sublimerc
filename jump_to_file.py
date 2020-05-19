@@ -16,27 +16,28 @@ def _try_open(window, try_file, path=None):
     else:
         return False
 
-
-class JumpToHeaderOrImpl(sublime_plugin.TextCommand):
-    def run(self, edit = None):
-        view = self.view
-        window = view.window()
-        file = view.file_name()
-        if file is None:
-            return
-
-        base, file_ext = splitext(file)
-        impl_exts = [".cc", ".cpp", ".c"]
-
-        if file_ext == ".h":
-            for impl_ext in impl_exts:
-                if _try_open(window, base + impl_ext):
-                    return
-        else:
-            for impl_ext in impl_exts:
-                if file_ext == impl_ext:
-                    if _try_open(window, base + ".h"):
-                        return
+# Derp, this is already built into sublime (the switch_file command)
+#
+# class JumpToHeaderOrImpl(sublime_plugin.TextCommand):
+#     def run(self, edit = None):
+#         view = self.view
+#         window = view.window()
+#         file = view.file_name()
+#         if file is None:
+#             return
+#
+#         base, file_ext = splitext(file)
+#         impl_exts = [".cc", ".cpp", ".c"]
+#
+#         if file_ext == ".h":
+#             for impl_ext in impl_exts:
+#                 if _try_open(window, base + impl_ext):
+#                     return
+#         else:
+#             for impl_ext in impl_exts:
+#                 if file_ext == impl_ext:
+#                     if _try_open(window, base + ".h"):
+#                         return
 
 
 class JumpToFile(sublime_plugin.TextCommand):

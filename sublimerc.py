@@ -1,13 +1,6 @@
 import sublime
 import sublime_plugin
 
-# See https://forum.sublimetext.com/t/dev-build-3156/33722/4
-# This won't be necessary in the next build once the bug is fixed.
-class FixedCommandPaletteInputSelectionCommand(sublime_plugin.WindowCommand):
-    def run(self):
-        self.window.run_command( "show_overlay", {"overlay": "command_palette"} )
-        self.window.run_command( "select_all" )
-
 
 # Comment continuation
 class SmartEnterCommand(sublime_plugin.TextCommand):
@@ -29,7 +22,8 @@ class SmartEnterCommand(sublime_plugin.TextCommand):
 
 # This is a replacement for the builtin paste command, which has annoying behavior after a
 # copy/paste with no selection: it will put the line above whatever line you're on, *even if*
-# your cursor is not at the start of the line*.
+# your cursor is not at the start of the line*. Should maybe be called DumbPaste since it fixes
+# logic that's trying to be too smart.
 #
 # They do this by adding special metadata to the item in the clipboard that only they interpret,
 # which means the special behavior only works in the same app, and you'd have no way of knowing
@@ -38,13 +32,19 @@ class SmartEnterCommand(sublime_plugin.TextCommand):
 #
 # NB: I previously tried to fix this by tweaking the copy and paste commands, but that resulted
 # in Cmd+C not working in the console panel. This way is simpler as well.
-
-# Should maybe be called DumbPaste since it fixes logic that's trying to be *too* smart.
+#
+# Additional behavior: auto-indents the contents if it begins with leading spaces (after any
+# leading newlines), which is an indication that it came from an indented context, but may need
+# to be reindented to fit the new context).
 class SmartPaste(sublime_plugin.TextCommand):
     def run(self, edit):
         # Looks like a no-op, but it removes the metadata
-        sublime.set_clipboard(sublime.get_clipboard())
-        self.view.run_command("paste")
+        text = sublime.get_clipboard()
+        sublime.set_clipboard(text)
 
-# TODO: smart indentation based on whether the string already has leading whitespace:
-# if so, reindent it at the current level. Not sure if that is actually what you want though.
+        # Smart indent. See details above.
+        lead = text.lstrip("\r\n")[0]
+        if lead == " " or lead == "\t":
+            self.view.run_command("paste_and_indent")
+        else:
+            self.view.run_command("paste")
