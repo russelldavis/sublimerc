@@ -62,7 +62,7 @@ class SettledEventThread(threading.Thread):
     def run(self):
         try:
             log("waiting")
-            subprocess.call(['/Users/russell/dev/projects/keywait/keywait'])
+            subprocess.call(['/Users/russell/dev/mac/keywait/keywait'])
 
             view = sublime.active_window().active_view()
             # NB: file_name might be None
