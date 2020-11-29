@@ -1,0 +1,11 @@
+[
+  // Adapted from https://github.com/glutanimate/sublime-deselect
+  { "keys": ["escape"], "command": "deselect", "context":
+      [
+          { "key": "selection_empty", "operator": "equal", "operand": false, "match_all": true },
+          { "key": "popup_visible", "operator": "equal", "operand": false, "match_all": true },
+          { "key": "panel_visible", "operator": "equal", "operand": false, "match_all": true },
+          { "key": "overlay_visible", "operator": "equal", "operand": false, "match_all": true }
+      ]
+  }
+]
